@@ -1,0 +1,6 @@
+build/
+dist/
+pkg/
+*.pkg.tar.xz
+src/
+*.tar.gz
