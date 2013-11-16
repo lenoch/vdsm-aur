@@ -11,6 +11,8 @@ to package vdsm for python2.
 
 - [x] python-cpopen
 - [x] python-pthreading
+- [x] fence-agents
+- [x] sanlock
 - [x] [python-ethtool](https://github.com/JonnyJD/PKGBUILDs/tree/master/_lio/python2-ethtool)
 - [x] [python-netaddr](https://aur.archlinux.org/packages/python2-netaddr/)
 - [ ] vdsm
