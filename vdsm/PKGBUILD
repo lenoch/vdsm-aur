@@ -53,9 +53,12 @@ md5sums=('SKIP')
 build() {
   cd "$srcdir/$pkgname"
   sed -i -e 's/iscsid.service/open-iscsi.service/' init/systemd/vdsmd.service
-  ./autogen.sh --system
+  PYTHON="$(which python2)" ./autogen.sh --system
   make
 }
 
 package() {
+  cd "$srcdir/$pkgname"
+  make
+  make DESTDIR="$pkgdir" install
 }
