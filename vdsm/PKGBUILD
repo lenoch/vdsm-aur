@@ -16,7 +16,7 @@ depends=(
     'e2fsprogs'  # mkfs.ext2
     'ed'
     'fence-agents'
-    'gluster'
+    'glusterfs'
     'gnutls'  # certtool
     'inetutils'  # hostname
     'iproute2'
