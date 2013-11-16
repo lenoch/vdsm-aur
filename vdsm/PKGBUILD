@@ -52,21 +52,10 @@ md5sums=('SKIP')
 
 build() {
   cd "$srcdir/$pkgname"
-  PYTHON="python2" ./autogen.sh --system
+  sed -i -e 's/iscsid.service/open-iscsi.service/' init/systemd/vdsmd.service
+  ./autogen.sh --system
   make
 }
 
 package() {
-  cd "$srcdir/$pkgname"
-  python2 setup.py install --root="$pkgdir/"
-
-  install -d "$pkgdir/usr/bin"
-  install -m 0755 pethtool.py "$pkgdir/usr/bin/pethtool"
-  sed -i '1s/python/python2/' "$pkgdir/usr/bin/pethtool"
-  install -m 0755 pifconfig.py "$pkgdir/usr/bin/pifconfig"
-  sed -i '1s/python/python2/' "$pkgdir/usr/bin/pifconfig"
-
-  install -d "$pkgdir/usr/share/man/man8"
-  install -m 644 man/pethtool.8.gz "$pkgdir/usr/share/man/man8/"
-  install -m 644 man/pifconfig.8.gz "$pkgdir/usr/share/man/man8/"
 }
