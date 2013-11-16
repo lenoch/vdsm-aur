@@ -31,6 +31,8 @@ depends=(
     'python2-netaddr'
     'python2-pthreading'
     'python2-pyinotify'
+    'python2-rtslib-fb'
+    'sanlock'
     'sosreport'  # Not packaged yet in Arch https://github.com/sosreport/sosreport
     'tree'
 )
