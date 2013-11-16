@@ -11,10 +11,11 @@ depends=(
     'bridge-utils'
     'cdrkit'  # genisoimage
     'chrony'
+    'dhclient'  # For multiple gateways (arch usually ships with dhcpd)
     'dosfstools'  # mkfs.vfat, mkfs.msdos
     'e2fsprogs'  # mkfs.ext2
     'ed'
-    'fence-agents'  # Not packaged yet in Arch (https://git.fedorahosted.org/git/fence-agents.git)
+    'fence-agents'
     'gluster'
     'gnutls'  # certtool
     'inetutils'  # hostname
