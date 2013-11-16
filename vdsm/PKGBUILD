@@ -10,6 +10,7 @@ groups=()
 depends=(
     'bridge-utils'
     'cdrkit'  # genisoimage
+    'chrony'
     'dosfstools'  # mkfs.vfat, mkfs.msdos
     'e2fsprogs'  # mkfs.ext2
     'ed'
@@ -21,17 +22,20 @@ depends=(
     'libguestfs'
     'libselinux'
     'libvirt>=1.0.2'
+    'multipath-tools-git'  # TODO: Make a stable version
+    'open-iscsi'
     'openssl'
     'psmisc'
     'pyparted'
     'python2-cpopen'
-    'python2-dmidecode-git'
+    'python2-dmidecode-git'  # TODO: Make a stable version
     'python2-ethtool'
     'python2-m2crypto'
     'python2-netaddr'
     'python2-pthreading'
     'python2-pyinotify'
     'python2-rtslib-fb'
+    'rpcbind'
     'sanlock'
     'sosreport'  # Not packaged yet in Arch https://github.com/sosreport/sosreport
     'tree'
