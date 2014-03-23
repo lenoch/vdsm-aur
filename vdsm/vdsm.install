@@ -1,0 +1,78 @@
+# This is a default template for a post-install scriptlet.
+# Uncomment only required functions and remove any functions
+# you don't need (and this header).
+_vdsm_user='vdsm'
+_vdsm_group='kvm'
+_qemu_group='qemu'
+_snlk_group='sanlock'
+
+## arg 1:  the new package version
+pre_install() {
+  /usr/bin/getent passwd "$_vdsm_user" >/dev/null || \
+    /usr/sbin/useradd -r -u 36 -g "$_vdsm_group" -d /var/lib/vdsm \
+        -s /sbin/nologin -c "Node Virtualization Manager" "$_vdsm_user"
+  /usr/sbin/usermod -a -G "$_qemu_group,$_snlk_group" "$_vdsm_user"
+}
+
+## arg 1:  the new package version
+post_install() {
+  mkdir -p "/rhev/data-center/hsm-tasks"
+  mkdir -p "/rhev/data-center/mnt"
+  mkdir -p "/var/run/vdsm"
+  # Set the vdsm libvirt password
+  vdsm-tool set-saslpasswd
+  # Create log dirs
+  _vdsm_log_dir="/var/log/vdsm"
+  mkdir -p $_vdsm_log_dir
+  touch $_vdsm_log_dir/{metadata.log,mom.log,supervdsm.log,vdsm.log}
+  chmod 0644 $_vdsm_log_dir/{metadata.log,mom.log,supervdsm.log,vdsm.log}
+  chown "$_vdsm_user:$_vdsm_group" $_vdsm_log_dir/{metadata.log,mom.log,vdsm.log}
+  chown root:root $_vdsm_log_dir/supervdsm.log
+  # Enable the service
+  /bin/systemctl enable vdsmd.service >/dev/null 2>&1 || :
+  /bin/systemctl enable supervdsmd.service >/dev/null 2>&1 || :
+  /bin/systemctl daemon-reload >/dev/null 2>&1 || :
+}
+
+## arg 1:  the new package version
+## arg 2:  the old package version
+pre_upgrade() {
+  systemctl stop vdsmd
+  systemctl stop supervdsmd
+}
+
+## arg 1:  the new package version
+## arg 2:  the old package version
+post_upgrade() {
+  systemctl start vdsmd
+}
+
+## arg 1:  the old package version
+pre_remove() {
+  _start_conf_section="## beginning of configuration section by vdsm"
+  _end_conf_section="## end of configuration section by vdsm"
+  _by_vdsm="by vdsm"
+
+  /bin/sed -i -e "/$_start_conf_section/,/$_end_conf_section/d" \
+  -e "/$_by_vdsm/d" \
+  /etc/libvirt/libvirtd.conf \
+  /etc/logrotate.d/libvirtd \
+  /etc/libvirt/qemu.conf \
+  /etc/sysconfig/libvirtd \
+  /etc/sysctl.conf \
+  /etc/libvirt/qemu-sanlock.conf
+
+  # Restoring backuped logrotate.d/libvirtd
+  /bin/sed -i -e 's/# VDSM backup//' /etc/logrotate.d/libvirtd
+
+  # stop the service
+  systemctl --no-reload disable vdsmd.service > /dev/null 2>&1 || :
+  systemctl --no-reload disable supervdsmd.service > /dev/null 2>&1 || :
+  systemctl stop vdsmd.service > /dev/null 2>&1 || :
+  systemctl stop supervdsmd.service > /dev/null 2>&1 || :
+}
+
+## arg 1:  the old package version
+post_remove() {
+  echo "Nothing to do on post remove"
+}

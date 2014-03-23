@@ -1,6 +1,6 @@
 # Maintainer: Antoni Segura Puimedon <antonisp@celebdor.com>
 pkgname=vdsm
-pkgver=4.13
+pkgver=4.14.5
 pkgrel=1
 pkgdesc="oVirt's Virtual Desktop and Server Manager."
 arch=('i686' 'x86_64')
@@ -12,6 +12,7 @@ depends=(
     'cdrkit'  # genisoimage
     'chrony'
     'dhclient'  # For multiple gateways (arch usually ships with dhcpd)
+    'dmidecode'  # libvirtd needs it
     'dosfstools'  # mkfs.vfat, mkfs.msdos
     'e2fsprogs'  # mkfs.ext2
     'ed'
@@ -21,11 +22,13 @@ depends=(
     'inetutils'  # hostname
     'iproute2'
     'libguestfs'
+    'libnl'
     'libselinux'
     'libvirt>=1.0.2'
     'multipath-tools-git'  # TODO: Make a stable version
     'open-iscsi'
     'openssl'
+    'pm-utils'  # libvirt uses it
     'psmisc'
     'pyparted'
     'python2-cpopen'
@@ -42,19 +45,29 @@ depends=(
     'tree'
 )
 makedepends=('python2-pyflakes' 'pep8-python2' 'python2-nose')
+install=vdsm.install
 provides=()
 conflicts=()
 replaces=()
 backup=()
 options=(!emptydirs)
-install=
-source=("$pkgname::git+https://git.fedorahosted.org/git/python-ethtool.git#tag=v$pkgver")
-md5sums=('SKIP')
+source=(
+    "$pkgname::git://gerrit.ovirt.org/vdsm#tag=v$pkgver"
+    '0001-Arch-downstream-patch-caps-to-recognize-arch-and-rem.patch'
+)
+md5sums=(
+    'SKIP'
+    'e60278a055ee04eca2d9317900187df1' # 0001-Arch-downstream-patch-caps-to-recognize-arch-and-rem.patch
+)
 
 build() {
   cd "$srcdir/$pkgname"
-  sed -i -e 's/iscsid.service/open-iscsi.service/' init/systemd/vdsmd.service
+  sed -i -e 's/iscsid.service/open-iscsi.service/' init/systemd/vdsmd.service.in
+  sed -i -e "s/'net_configurator', 'ifcfg'/'net_configurator', 'iproute2'/" lib/vdsm/config.py.in
+  sed -i -e "s/'net_persistence', 'ifcfg'/'net_configurator', 'unified'/" lib/vdsm/config.py.in
   PYTHON="$(which python2)" ./autogen.sh --system
+  grep -e "/usr/bin/python$" * -R -l | xargs sed -i -e 's/\/usr\/bin\/python/\/usr\/bin\/python2/'
+  patch -p1 < ../../0001-Arch-downstream-patch-caps-to-recognize-arch-and-rem.patch
   make
 }
 
@@ -62,4 +75,20 @@ package() {
   cd "$srcdir/$pkgname"
   make
   make DESTDIR="$pkgdir" install
+  mkdir -p "$pkgdir/usr/lib/systemd/system"
+  install -D -m 644 init/systemd/supervdsmd.service "$pkgdir/usr/lib/systemd/system"
+  install -D -m 644 init/systemd/vdsmd.service "$pkgdir/usr/lib/systemd/system"
+  mkdir -p "$pkgdir/usr/lib/tmpfiles.d"
+  install -D -m 644 init/systemd/vdsm-tmpfiles.d.conf "$pkgdir/usr/lib/tmpfiles.d/"
+
+  # Set the correct data for the install script
+  _vdsm_user=`grep "global vdsm_user" "$srcdir/$pkgname/vdsm.spec" | cut -d' ' -f3`
+  _vdsm_group=`grep "global vdsm_group" "$srcdir/$pkgname/vdsm.spec" | cut -d' ' -f3`
+  _qemu_group=`grep "global qemu_group" "$srcdir/$pkgname/vdsm.spec" | cut -d' ' -f3`
+  _snlk_group=`grep "global snlk_group" "$srcdir/$pkgname/vdsm.spec" | cut -d' ' -f3`
+  cd -
+  sed -i -e "s/VDSM_USER/$_vdsm_user/" ../vdsm.install
+  sed -i -e "s/VDSM_GROUP/$_vdsm_group/" ../vdsm.install
+  sed -i -e "s/QEMU_GROUP/$_qemu_group/" ../vdsm.install
+  sed -i -e "s/SNLK_GROUP/$_snlk_group/" ../vdsm.install
 }

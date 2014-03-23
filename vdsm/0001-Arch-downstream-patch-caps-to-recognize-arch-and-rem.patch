@@ -1,0 +1,61 @@
+From 115791a637722b88efc040d934da4b9f73ee5adc Mon Sep 17 00:00:00 2001
+From: "Antoni S. Puimedon" <asegurap@redhat.com>
+Date: Sun, 23 Mar 2014 01:40:06 +0100
+Subject: [PATCH] Arch downstream: patch caps to recognize arch and remove rpm
+ dep
+
+Change-Id: I0b5b1a140be199335b134ba31d1439bbc5eff3c9
+Signed-off-by: Antoni S. Puimedon <asegurap@redhat.com>
+---
+ vdsm/caps.py | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/vdsm/caps.py b/vdsm/caps.py
+index b260d29..bd11cc5 100644
+--- a/vdsm/caps.py
++++ b/vdsm/caps.py
+@@ -30,7 +30,6 @@ import linecache
+ import glob
+ 
+ import libvirt
+-import rpm
+ 
+ from vdsm.config import config
+ from vdsm import libvirtconnection
+@@ -57,6 +56,7 @@ except ImportError:
+ 
+ 
+ class OSName:
++    ARCH = 'Arch Linux'
+     UNKNOWN = 'unknown'
+     OVIRT = 'oVirt Node'
+     RHEL = 'RHEL'
+@@ -276,7 +276,9 @@ def _getRngSources():
+ 
+ @utils.memoized
+ def getos():
+-    if os.path.exists('/etc/rhev-hypervisor-release'):
++    if os.path.exists('/etc/arch-release'):
++        return OSName.ARCH
++    elif os.path.exists('/etc/rhev-hypervisor-release'):
+         return OSName.RHEVH
+     elif glob.glob('/etc/ovirt-node-*-release'):
+         return OSName.OVIRT
+@@ -300,10 +302,14 @@ def osversion():
+             d = _parseKeyVal(file('/etc/default/version'))
+             version = d.get('VERSION', '')
+             release = d.get('RELEASE', '')
++        elif osname == OSName.ARCH:
++            version = "Rolling release"
++            release = ""
+         elif osname == OSName.DEBIAN:
+             version = linecache.getline('/etc/debian_version', 1).strip("\n")
+             release = ""  # Debian just has a version entry
+         else:
++            import rpm
+             ts = rpm.TransactionSet()
+             for er in ts.dbMatch('basenames', '/etc/redhat-release'):
+                 version = er['version']
+-- 
+1.9.1
+
