@@ -1,0 +1,82 @@
+# Maintainer: Ondřej Svoboda <ondrej@svobodasoft.cz>
+# Maintainer: Antoni Segura Puimedon <antonisp@celebdor.com>
+_pkgname=vdsm
+pkgname=vdsm-git
+pkgver=4.17
+pkgrel=1
+pkgdesc="oVirt's Virtual Desktop and Server Manager."
+arch=('i686' 'x86_64')
+url="http://www.ovirt.org/Vdsm"
+license=('APACHE')
+groups=()
+depends=(
+    'bridge-utils'
+    'cdrkit'  # genisoimage
+    'chrony'
+    'dhclient'  # For multiple gateways (arch usually ships with dhcpd)
+    'dosfstools'  # mkfs.vfat, mkfs.msdos
+    'e2fsprogs'  # mkfs.ext2
+    'ed'
+    'fence-agents'
+    'glusterfs'
+    'gnutls'  # certtool
+    'inetutils'  # hostname
+    'iproute2'
+    'libguestfs'
+    'libselinux'
+    'libvirt>=1.0.2'
+    'libvirt-python'
+    'multipath-tools'
+    'open-iscsi'
+    'openssl'
+    'psmisc'
+    'python2-pyparted'
+    'python2-cpopen'
+    'python2-dmidecode-git'  # TODO: Make a stable version
+    'python2-ethtool'
+    'python2-m2crypto'
+    'python2-netaddr'
+    'python2-pthreading'
+    'python2-pyinotify'
+    'python2-rtslib-fb'
+    'rpcbind'
+    'rpm-org'
+    'sanlock'
+    'sosreport'  # Not packaged yet in Arch https://github.com/sosreport/sosreport
+    'tree'
+)
+makedepends=('python2-pyflakes' 'pep8-python2' 'python2-nose')
+provides=(vdsm)
+conflicts=(vdsm)
+replaces=(vdsm)
+backup=()
+options=(!emptydirs)
+install=
+source=("$_pkgname::git://gerrit.ovirt.org/vdsm")
+md5sums=('SKIP')
+
+build() {
+  cd "$srcdir/$_pkgname"
+  sed -i -e 's/iscsid.service/open-iscsi.service/' init/systemd/vdsmd.service.in
+  sed -i -e 's/nosetests/nosetests2/' configure.ac
+  PYTHON="$(which python2)" ./autogen.sh --system
+  echo
+  echo
+  sleep 5
+  make
+}
+
+package() {
+  cd "$srcdir/$_pkgname"
+  make
+  make DESTDIR="$pkgdir" install
+
+install -Dm 0755 init/systemd/systemd-vdsmd ${pkgdir}/usr/lib/systemd/systemd-vdsmd
+install -Dm 0644 init/systemd/vdsmd.service ${pkgdir}/usr/lib/systemd/system/vdsmd.service
+install -Dm 0644 init/systemd/supervdsmd.service ${pkgdir}/usr/lib/systemd/system/supervdsmd.service
+
+install -Dm 0644 vdsm/vdsm-modules-load.d.conf \
+                 ${pkgdir}/etc/modules-load.d/vdsm.conf
+
+  #cd $pkgdir
+}
